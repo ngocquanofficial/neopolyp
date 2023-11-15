@@ -111,8 +111,7 @@ display_step = 50
 pretrained_path = args.pretrained_path
 
 model = UNet()
-model.apply(weights_init)
-model = nn.DataParallel(model)
+# model.apply(weights_init)
 
 checkpoint = torch.load(pretrained_path)
 
