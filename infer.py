@@ -194,7 +194,7 @@ if not os.path.isdir("/kaggle/working/predicted_masks"):
     os.mkdir("/kaggle/working/predicted_masks")
 for _, (img, path, H, W) in enumerate(test_dataloader):
     a = path
-    b = img
+    b = img.to(device)
     h = H
     w = W
 
