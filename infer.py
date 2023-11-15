@@ -112,20 +112,10 @@ pretrained_path = args.pretrained_path
 
 model = UNet()
 # model.apply(weights_init)
-
+optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
 checkpoint = torch.load(pretrained_path)
-
-# new_state_dict = OrderedDict()
-# for k, v in checkpoint['model'].items():
-#     name = k[7:]  # remove `module.`
-#     new_state_dict[name] = v
-# # load params
 model.load_state_dict(checkpoint['model'])
 model.to(device)
-loss_function = nn.CrossEntropyLoss()
-
-# Define the optimizer (Adam optimizer)
-optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
 optimizer.load_state_dict(checkpoint['optimizer'])
 
 
