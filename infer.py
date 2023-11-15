@@ -128,11 +128,7 @@ loss_function = nn.CrossEntropyLoss()
 
 # Define the optimizer (Adam optimizer)
 optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
-
-# optimizer.load_state_dict(checkpoint['optimizer'])
-
-# Learning rate scheduler
-learing_rate_scheduler = lr_scheduler.StepLR(optimizer, step_size=8, gamma=0.6)
+optimizer.load_state_dict(checkpoint['optimizer'])
 
 
 # Test function
