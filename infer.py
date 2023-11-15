@@ -31,8 +31,6 @@ parser = argparse.ArgumentParser(description='NeoPolyp Inference')
 
 parser.add_argument('--save_path', type=str, default='/kaggle/working/predicted_masks',
                     help='save path')
-parser.add_argument('--checkpoint_path', type=str, default='/kaggle/working/unet_model.pth',
-                    help='checkpoint path')
 parser.add_argument('--pretrained_path', type=str, default="/kaggle/input/unet-checkpoint/unet_model.pth",
                     help='pretrained path')
 
@@ -110,7 +108,6 @@ batch_size = 8
 display_step = 50
 
 # Model path
-checkpoint_path = args.checkpoint_path
 pretrained_path = args.pretrained_path
 
 model = UNet()
@@ -155,6 +152,7 @@ def test(dataloader):
             dice_acc += dice_score(outputs, targets)
 #     print("CHECK: ",100.0 * correct / (test_loss))
     return dice_acc / len(dataloader) * 100, acc/len(dataloader) * 100
+
 
 # Create submission
 transform = Compose([Resize((256, 256), interpolation=InterpolationMode.BILINEAR),
