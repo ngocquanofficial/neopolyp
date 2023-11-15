@@ -111,17 +111,30 @@ display_step = 50
 pretrained_path = args.pretrained_path
 
 model = UNet()
-# model.apply(weights_init)
-optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+model.apply(weights_init)
+model = nn.DataParallel(model)
 checkpoint = torch.load(pretrained_path)
+
+# new_state_dict = OrderedDict()
+# for k, v in checkpoint['model'].items():
+#     name = k[7:]  # remove `module.`
+#     new_state_dict[name] = v
+# # load params
 model.load_state_dict(checkpoint['model'])
+model = nn.DataParallel(model)
 model.to(device)
+loss_function = nn.CrossEntropyLoss()
+
+# Define the optimizer (Adam optimizer)
+optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+
 optimizer.load_state_dict(checkpoint['optimizer'])
+
+# Learning rate scheduler
+learing_rate_scheduler = lr_scheduler.StepLR(optimizer, step_size=8, gamma=0.6)
 
 
 # Test function
-
-
 def test(dataloader):
     test_loss = 0
     correct = 0
@@ -153,7 +166,7 @@ if not os.path.isdir("/kaggle/working/predicted_masks"):
     os.mkdir("/kaggle/working/predicted_masks")
 for _, (img, path, H, W) in enumerate(test_dataloader):
     a = path
-    b = img.to(device)
+    b = img
     h = H
     w = W
 
