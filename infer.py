@@ -135,6 +135,7 @@ pretrained_path = args.pretrained_path
 # model.load_state_dict(new_state_dict)
 
 model = UNet()
+model = model.to(device)
 
 # Load the checkpoint
 checkpoint = torch.load(pretrained_path)
@@ -157,10 +158,6 @@ optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
 
 # Load the optimizer state dictionary
 optimizer.load_state_dict(checkpoint['optimizer'])
-
-
-
-
 
 
 # Test function
