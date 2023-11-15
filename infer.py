@@ -110,29 +110,58 @@ display_step = 50
 # Model path
 pretrained_path = args.pretrained_path
 
-model = UNet()
-# model.apply(weights_init)
+# model = UNet()
+# # model.apply(weights_init)
 
-checkpoint = torch.load(pretrained_path)
+# checkpoint = torch.load(pretrained_path)
 
+# # new_state_dict = OrderedDict()
+# # for k, v in checkpoint['model'].items():
+# #     name = k[7:]  # remove `module.`
+# #     new_state_dict[name] = v
+# # # load params
+# model.load_state_dict(checkpoint['model'])
+# model.to(device)
+# loss_function = nn.CrossEntropyLoss()
+
+# # Define the optimizer (Adam optimizer)
+# optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+# optimizer.load_state_dict(checkpoint['optimizer'])
 # new_state_dict = OrderedDict()
 # for k, v in checkpoint['model'].items():
 #     name = k[7:]  # remove `module.`
 #     new_state_dict[name] = v
 # # load params
-model.load_state_dict(checkpoint['model'])
-model.to(device)
+# model.load_state_dict(new_state_dict)
+
+model = UNet()
+
+# Load the checkpoint
+checkpoint = torch.load(pretrained_path)
+
+# Print keys for troubleshooting
+print("Model State Dictionary Keys:", model.state_dict().keys())
+print("Checkpoint Keys:", checkpoint['model'].keys())
+
+# Attempt to load the state dictionary with strict=False
+model.load_state_dict(checkpoint['model'], strict=False)
+
+# Move the model to the device
+model = model.to(device)
+
+# Define the loss function
 loss_function = nn.CrossEntropyLoss()
 
 # Define the optimizer (Adam optimizer)
 optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+
+# Load the optimizer state dictionary
 optimizer.load_state_dict(checkpoint['optimizer'])
-new_state_dict = OrderedDict()
-for k, v in checkpoint['model'].items():
-    name = k[7:]  # remove `module.`
-    new_state_dict[name] = v
-# load params
-model.load_state_dict(new_state_dict)
+
+
+
+
+
 
 # Test function
 
