@@ -129,9 +129,16 @@ loss_function = nn.CrossEntropyLoss()
 # Define the optimizer (Adam optimizer)
 optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
 optimizer.load_state_dict(checkpoint['optimizer'])
-
+new_state_dict = OrderedDict()
+for k, v in checkpoint['model'].items():
+    name = k[7:]  # remove `module.`
+    new_state_dict[name] = v
+# load params
+model.load_state_dict(new_state_dict)
 
 # Test function
+
+
 def test(dataloader):
     test_loss = 0
     correct = 0
