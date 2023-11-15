@@ -28,16 +28,9 @@ from dataloader import UNetDataClass, UNetTestDataClass
 from model import UNet
 
 parser = argparse.ArgumentParser(description='NeoPolyp Inference')
-parser.add_argument('--model', type=str, default='model.pth',
-                    help='model path')
-parser.add_argument('--data_path', type=str, default='data',
-                    help='data path')
-parser.add_argument('--batch_size', type=int, default=1,
-                    help='batch size')
+
 parser.add_argument('--save_path', type=str, default='/kaggle/working/predicted_masks',
                     help='save path')
-parser.add_argument('--csv_path', type=str, default='/kaggle/working/',
-                    help='csv path')
 parser.add_argument('--checkpoint_path', type=str, default='/kaggle/working/unet_model.pth',
                     help='checkpoint path')
 parser.add_argument('--pretrained_path', type=str, default="/kaggle/input/unet-checkpoint/unet_model.pth",
@@ -119,68 +112,6 @@ display_step = 50
 # Model path
 checkpoint_path = args.checkpoint_path
 pretrained_path = args.pretrained_path
-# Initialize lists to keep track of loss and accuracy
-loss_epoch_array = []
-train_accuracy = []
-test_accuracy = []
-valid_accuracy = []
-dice_score_train = []
-dice_score_val = []
-
-train_size = 0.8
-valid_size = 0.2
-images_path = args.images_path
-masks_path = args.masks_path
-images_list = os.listdir(images_path)
-masks_list = os.listdir(masks_path)
-training_index = random.sample(
-    range(len(images_list)), int(len(images_list) * train_size))
-validation_index = [i for i in range(
-    len(images_list)) if i not in training_index]
-# training_images_list = [images_list[i] for i in training_index]
-# validation_images_list = [images_list[i] for i in validation_index]
-
-
-# Define probabilities for each transform
-p_horizontal_flip = 0.5
-p_vertical_flip = 0.3
-p_rotation = 0.3
-p_random_crop = 0.1
-p_gaussian_blur = 0.2  # Adjust based on preference
-p_color_jitter = 0.3
-
-training_transform = transforms.Compose([
-    transforms.RandomApply(
-        [transforms.RandomHorizontalFlip()], p=p_horizontal_flip),
-    transforms.RandomApply(
-        [transforms.RandomVerticalFlip()], p=p_vertical_flip),
-    transforms.RandomApply(
-        [transforms.RandomRotation(degrees=15)], p=p_rotation),
-    transforms.RandomApply(
-        [transforms.RandomResizedCrop(256)], p=p_random_crop),
-    transforms.RandomApply(
-        [transforms.GaussianBlur(kernel_size=3)], p=p_gaussian_blur),
-    transforms.RandomApply([transforms.ColorJitter(
-        brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2)], p=p_color_jitter),
-
-    transforms.Resize(
-        (256, 256), interpolation=transforms.InterpolationMode.BILINEAR),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                         std=(0.229, 0.224, 0.225)),
-])
-validation_transform = Compose([transforms.Resize((256, 256), interpolation=transforms.InterpolationMode.BILINEAR),
-                                transforms.ToTensor(), transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))])
-
-unet_training_dataset = UNetDataClass(
-    images_path, masks_path, training_transform, training_index)
-unet_validation_dataset = UNetDataClass(
-    images_path, masks_path, validation_transform, validation_index)
-
-train_dataloader = DataLoader(
-    unet_training_dataset, batch_size=batch_size, shuffle=True)
-valid_dataloader = DataLoader(
-    unet_validation_dataset, batch_size=batch_size, shuffle=True)
 
 model = UNet()
 model.apply(weights_init)
@@ -207,56 +138,6 @@ optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
 learing_rate_scheduler = lr_scheduler.StepLR(optimizer, step_size=8, gamma=0.6)
 
 
-def train(train_dataloader, valid_dataloader, learing_rate_scheduler, epoch, display_step):
-    print(
-        f"Start epoch #{epoch+1}, learning rate for this epoch: {learing_rate_scheduler.get_last_lr()}")
-    start_time = time.time()
-    train_loss_epoch = 0
-    test_loss_epoch = 0
-    last_loss = 999999999
-    model.train()
-    for i, (data, targets) in enumerate(train_dataloader):
-
-        # Load data into GPU
-        data, targets = data.to(device), targets.to(device)
-
-        optimizer.zero_grad()
-        outputs = model(data)
-
-        # Backpropagation, compute gradients
-        loss = loss_function(outputs, targets.long())
-        loss.backward()
-
-        # Apply gradients
-        optimizer.step()
-
-        # Save loss
-        train_loss_epoch += loss.item()
-        if (i+1) % display_step == 0:
-            #             accuracy = float(test(test_loader))
-            print('Train Epoch: {} [{}/{} ({}%)]\tLoss: {:.4f}'.format(
-                epoch + 1, (i+1) * len(data), len(train_dataloader.dataset), 100 *
-                (i+1) * len(data) / len(train_dataloader.dataset),
-                loss.item()))
-
-    print(
-        f"Done epoch #{epoch+1}, time for this epoch: {time.time()-start_time}s")
-    train_loss_epoch /= (i + 1)
-
-    # Evaluate the validation set
-    model.eval()
-    with torch.no_grad():
-        for data, target in valid_dataloader:
-            data, target = data.to(device), target.to(device)
-            test_output = model(data)
-            test_loss = loss_function(test_output, target)
-            test_loss_epoch += test_loss.item()
-
-    test_loss_epoch /= (i+1)
-
-    return train_loss_epoch, test_loss_epoch
-
-
 # Test function
 def test(dataloader):
     test_loss = 0
@@ -274,46 +155,6 @@ def test(dataloader):
             dice_acc += dice_score(outputs, targets)
 #     print("CHECK: ",100.0 * correct / (test_loss))
     return dice_acc / len(dataloader) * 100, acc/len(dataloader) * 100
-
-
-wandb.login(
-    # set the wandb project where this run will be logged
-    #     project= "PolypSegment",
-    key="9e7c7aead65864c7d2a322f932d2e9a6e2d631d9",
-)
-wandb.init(
-    project="PolypSegment"
-)
-# Training loop
-train_loss_array = []
-test_loss_array = []
-last_loss = 9999999999999
-for epoch in range(epochs):
-    print(f"Start at epoch {epoch}")
-    train_loss_epoch = 0
-    test_loss_epoch = 0
-    (train_loss_epoch, test_loss_epoch) = train(train_dataloader,
-                                                valid_dataloader,
-                                                learing_rate_scheduler, epoch, display_step)
-
-    if test_loss_epoch < last_loss:
-        save_model(model, optimizer, checkpoint_path)
-        last_loss = test_loss_epoch
-
-    learing_rate_scheduler.step()
-    train_loss_array.append(train_loss_epoch)
-    test_loss_array.append(test_loss_epoch)
-    wandb.log({"Train loss": train_loss_epoch, "Valid loss": test_loss_epoch})
-    train_accuracy.append(test(train_dataloader)[1])
-    valid_accuracy.append(test(valid_dataloader)[1])
-
-    dice_score_train.append(test(train_dataloader)[0])
-    dice_score_val.append(test(train_dataloader)[0])
-    print("Epoch {}: loss: {:.4f}, train accuracy: {:.4f}, valid accuracy:{:.4f}".format(epoch + 1,
-                                                                                         train_loss_array[-1], train_accuracy[-1], valid_accuracy[-1]))
-    print(
-        f"Dice score train: {dice_score_train[-1]}, val: {dice_score_val[-1]}")
-
 
 # Create submission
 transform = Compose([Resize((256, 256), interpolation=InterpolationMode.BILINEAR),
@@ -388,7 +229,6 @@ def mask2string(dir):
     return r
 
 
-# change this to the path to your output mask folder
 MASK_DIR_PATH = '/kaggle/working/predicted_masks'
 dir = MASK_DIR_PATH
 res = mask2string(dir)
