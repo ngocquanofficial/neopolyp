@@ -122,7 +122,6 @@ checkpoint = torch.load(pretrained_path)
 #     new_state_dict[name] = v
 # # load params
 model.load_state_dict(checkpoint['model'])
-model = nn.DataParallel(model)
 model.to(device)
 loss_function = nn.CrossEntropyLoss()
 
